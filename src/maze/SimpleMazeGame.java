@@ -28,6 +28,7 @@
 package maze;
 
 import java.io.*;
+import java.util.*;
 
 import maze.ui.MazeViewer;
 
@@ -49,8 +50,8 @@ public class SimpleMazeGame
 		Room r1 = new Room(0);
 		Room r2 = new Room(1);
 		Door theDoor = new Door(r1, r2);
-		maze.rooms.put(r1.number, r1);
-		maze.rooms.put(r2.number, r2);
+		maze.addRoom(r1);
+		maze.addRoom(r2);
 		maze.setCurrentRoom(0);
 		r1.setSide(Direction.North, theDoor);
 		r1.setSide(Direction.East, new Wall());
@@ -65,27 +66,132 @@ public class SimpleMazeGame
 
 	public static Maze loadMaze(final String path)
 	{
+		ArrayList<Room> rooms = new ArrayList<Room>();
+		ArrayList<Door> doors = new ArrayList<Door>();
+		ArrayList<String> lines = new ArrayList<String>();
+		
 		Maze maze = new Maze();
 		BufferedReader buffer;
 		try {
 			buffer = new BufferedReader(new FileReader(path));
-			String line = buffer.readLine();
-			while (line != null) {
-				System.out.println(line);
+			String line;
+			
+			while ((line = buffer.readLine() ) != null) {
+				lines.add(line);
 				String[] splitLine = line.split(" ");
 				if(splitLine[0].equals("room")) {
 					//make new room
+					rooms.add(new Room(rooms.size()));
 					
-				} else {
+				} else if(splitLine[0].equals("door")) {
+					int roomNum1 = Integer.parseInt(splitLine[2]);
+					int roomNum2 = Integer.parseInt(splitLine[3]);
 					
+					Door newDoor = new Door(rooms.get(roomNum1), rooms.get(roomNum2));
+					newDoor.setOpen(Boolean.parseBoolean(splitLine[4]));
+					doors.add(newDoor);
 				}
-				line = buffer.readLine();
+				System.out.println(line);
 			}
 			buffer.close();
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
+		
+		//add rooms to maze
+		for(int roomNum = 0; roomNum<rooms.size(); roomNum++) {
+			maze.addRoom(rooms.get(roomNum));
+		}
+		maze.setCurrentRoom(0);
+		makeWalls(rooms, doors, lines);
 		return maze;
+	}
+	
+	/**
+	 * Makes the walls for each direction
+	 * TODO - one bug that exists is that the doors are not visible if a wall is placed between the two rooms afterwards.
+	 * This can be fixed by placing all of the doors to be added in the direction in the certain rooms after the walls are placed.
+	 * @param rooms
+	 * @param doors
+	 * @param lines
+	 */
+	private static void makeWalls(ArrayList<Room> rooms, ArrayList<Door> doors, ArrayList<String> lines) {
+		System.out.println("in make walls");
+		for(int lineIndex=0; lineIndex < lines.size(); lineIndex++) {
+			String[] splitLine = lines.get(lineIndex).split(" ");
+			if(splitLine[0].equals("room")) {
+				int roomIndex = Integer.parseInt(splitLine[1]);
+				Room currRoom = rooms.get(roomIndex);
+				
+				//North Wall
+				MapSite northDir= null;
+				String side = splitLine[2];
+				if(side.equals("wall")) { //for wall side
+					northDir = new Wall();
+				} else if (side.startsWith("d")){ //for door side
+					int doorIndex = getDoorIndex(side);
+					System.out.println(doorIndex);
+					northDir = doors.get(doorIndex);
+				} else { //for room side
+					northDir = rooms.get(Integer.parseInt(side));
+				}
+				
+				currRoom.setSide(Direction.North, northDir);
+				
+				//East Wall
+				MapSite eastDir= null;
+				side = splitLine[3];
+				if(side.equals("wall")) { //for wall side
+					eastDir = new Wall();
+				} else if (side.startsWith("d")){ //for door side
+					System.out.println("eastern door: " + roomIndex);
+					
+					int doorIndex = getDoorIndex(side);
+					System.out.println(doorIndex);
+					eastDir = doors.get(doorIndex);
+				} else { //for room side
+					eastDir = rooms.get(Integer.parseInt(side));
+				}
+				
+				currRoom.setSide(Direction.East, eastDir);
+				
+				//South Wall
+				MapSite southDir= null;
+				side = splitLine[4];
+				if(side.equals("wall")) { //for wall side
+					southDir = new Wall();
+				} else if (side.startsWith("d")){ //for door side
+					int doorIndex = getDoorIndex(side);
+					System.out.println(doorIndex);
+					southDir = doors.get(doorIndex);
+				} else { //for room side
+					southDir = rooms.get(Integer.parseInt(side));
+				}
+				
+				currRoom.setSide(Direction.South, southDir);
+				
+				//West Wall
+				MapSite westDir= null;
+				side = splitLine[5];
+				if(side.equals("wall")) { //for wall side
+					westDir = new Wall();
+				} else if (side.startsWith("d")){ //for door side
+					int doorIndex = getDoorIndex(side);
+					System.out.println(doorIndex);
+					westDir = doors.get(doorIndex);
+				} else { //for room side
+					westDir = rooms.get(Integer.parseInt(side));
+				}
+				
+				currRoom.setSide(Direction.West, westDir);
+				
+			} 
+		}
+		
+	}
+	
+	private static int getDoorIndex(String door) {
+		return Integer.parseInt(door.substring(1));
 	}
 	
 	private static void makeRoom() {
