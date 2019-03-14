@@ -123,68 +123,23 @@ public class SimpleMazeGame
 			if(splitLine[0].equals("room")) {
 				int roomIndex = Integer.parseInt(splitLine[1]);
 				Room currRoom = rooms.get(roomIndex);
+				Direction[] directions = {Direction.North, Direction.East, Direction.South, Direction.West};
 				
-				//North Wall
-				MapSite northDir= null;
-				String side = splitLine[2];
-				if(side.equals("wall")) { //for wall side
-					northDir = new Wall();
-				} else if (side.startsWith("d")){ //for door side
-					int doorIndex = getDoorIndex(side);
-					northDir = doors.get(doorIndex);
-				} else { //for room side
-					northDir = rooms.get(Integer.parseInt(side));
+				for(int splitIndex = 2; splitIndex <6; splitIndex++) {
+					Direction currDir = directions[splitIndex-2];
+					MapSite mapSite= null;
+					String side = splitLine[splitIndex];
+					if(side.equals("wall")) { //for wall side
+						mapSite = new Wall();
+					} else if (side.startsWith("d")){ //for door side
+						int doorIndex = getDoorIndex(side);
+						mapSite = doors.get(doorIndex);
+					} else { //for room side
+						mapSite = rooms.get(Integer.parseInt(side));
+					}
+					
+					sideSetUp.addRoomDir(mapSite, currRoom, currDir);
 				}
-				
-				sideSetUp.addRoomDir(northDir, currRoom, Direction.North);
-				//currRoom.setSide(Direction.North, northDir);
-				
-				//East Wall
-				MapSite eastDir= null;
-				side = splitLine[3];
-				if(side.equals("wall")) { //for wall side
-					eastDir = new Wall();
-				} else if (side.startsWith("d")){ //for door side
-					System.out.println("eastern door: " + roomIndex);
-					int doorIndex = getDoorIndex(side);
-					eastDir = doors.get(doorIndex);
-				} else { //for room side
-					eastDir = rooms.get(Integer.parseInt(side));
-				}
-				
-				sideSetUp.addRoomDir(eastDir, currRoom, Direction.East);
-				//currRoom.setSide(Direction.East, eastDir);
-				
-				//South Wall
-				MapSite southDir= null;
-				side = splitLine[4];
-				if(side.equals("wall")) { //for wall side
-					southDir = new Wall();
-				} else if (side.startsWith("d")){ //for door side
-					int doorIndex = getDoorIndex(side);
-					southDir = doors.get(doorIndex);
-				} else { //for room side
-					southDir = rooms.get(Integer.parseInt(side));
-				}
-				
-				sideSetUp.addRoomDir(southDir, currRoom, Direction.South);
-				//currRoom.setSide(Direction.South, southDir);
-				
-				//West Wall
-				MapSite westDir= null;
-				side = splitLine[5];
-				if(side.equals("wall")) { //for wall side
-					westDir = new Wall();
-				} else if (side.startsWith("d")){ //for door side
-					int doorIndex = getDoorIndex(side);
-					westDir = doors.get(doorIndex);
-				} else { //for room side
-					westDir = rooms.get(Integer.parseInt(side));
-				}
-				
-				sideSetUp.addRoomDir(westDir, currRoom, Direction.West);
-				//currRoom.setSide(Direction.West, westDir);
-				
 				
 			} 
 		}

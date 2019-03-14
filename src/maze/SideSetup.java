@@ -1,7 +1,6 @@
 package maze;
 
 import java.util.*;
-import maze.ui.MazeViewer;
 
 class SideSetup {
 
@@ -17,21 +16,6 @@ class SideSetup {
 		side = new Wall();
 				
 		mapSiteRoom.put("wall", roomDir );
-		
-	}
-	
-	public SideSetup(MapSite mapsite, Room room, Direction direction) {
-		side = mapsite;
-		roomDir = new HashMap<Room, ArrayList<Direction>>();
-		mapSiteRoom = new HashMap<>();
-		
-		dirList= new ArrayList<Direction>();
-		dirList.add(direction);
-		
-		roomDir.put(room, dirList);
-		
-		side.getClass().toString();
-		mapSiteRoom.put(side.getClass().toString(), roomDir);
 		
 	}
 	
