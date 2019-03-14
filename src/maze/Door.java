@@ -39,12 +39,14 @@ public class Door extends MapSite
 {
 	private final Room[] rooms = new Room[2];
 	private boolean open;
+	private final int doorNum;
 
-	public Door(final Room r1, final Room r2)
+	public Door(final Room r1, final Room r2, int doorNum)
 	{
 		open = false;
 		rooms[0] = r1;
 		rooms[1] = r2;
+		this.doorNum = doorNum;
 	}
 	
 	public final boolean isOpen()
@@ -82,5 +84,14 @@ public class Door extends MapSite
 	public Color getColor()
 	{
 		return Color.LIGHT_GRAY;
+	}
+	
+	public int getDoorNum() {
+		return this.doorNum;
+	}
+	
+	@Override
+	public String toString() {
+		return "d" + getDoorNum();
 	}
 }

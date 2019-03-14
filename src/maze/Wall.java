@@ -48,4 +48,9 @@ public class Wall extends MapSite
 	{
 		return Color.BLACK;
 	}
+	
+	@Override
+	public String toString() {
+		return "wall";
+	}
 }

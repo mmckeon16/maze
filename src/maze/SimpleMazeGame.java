@@ -49,7 +49,7 @@ public class SimpleMazeGame
 		Maze maze = new Maze();
 		Room r1 = new Room(0);
 		Room r2 = new Room(1);
-		Door theDoor = new Door(r1, r2);
+		Door theDoor = new Door(r1, r2, 0);
 		maze.addRoom(r1);
 		maze.addRoom(r2);
 		maze.setCurrentRoom(0);
@@ -87,8 +87,8 @@ public class SimpleMazeGame
 					int roomNum1 = Integer.parseInt(splitLine[2]);
 					int roomNum2 = Integer.parseInt(splitLine[3]);
 					
-					Door newDoor = new Door(rooms.get(roomNum1), rooms.get(roomNum2));
-					newDoor.setOpen(Boolean.parseBoolean(splitLine[4]));
+					Door newDoor = new Door(rooms.get(roomNum1), rooms.get(roomNum2), doors.size());
+					newDoor.setOpen(splitLine[4].equals("open"));
 					doors.add(newDoor);
 				}
 				System.out.println(line);
@@ -117,6 +117,7 @@ public class SimpleMazeGame
 	 */
 	private static void makeWalls(ArrayList<Room> rooms, ArrayList<Door> doors, ArrayList<String> lines) {
 		System.out.println("in make walls");
+		SideSetup sideSetUp = new SideSetup();
 		for(int lineIndex=0; lineIndex < lines.size(); lineIndex++) {
 			String[] splitLine = lines.get(lineIndex).split(" ");
 			if(splitLine[0].equals("room")) {
@@ -130,13 +131,13 @@ public class SimpleMazeGame
 					northDir = new Wall();
 				} else if (side.startsWith("d")){ //for door side
 					int doorIndex = getDoorIndex(side);
-					System.out.println(doorIndex);
 					northDir = doors.get(doorIndex);
 				} else { //for room side
 					northDir = rooms.get(Integer.parseInt(side));
 				}
 				
-				currRoom.setSide(Direction.North, northDir);
+				sideSetUp.addRoomDir(northDir, currRoom, Direction.North);
+				//currRoom.setSide(Direction.North, northDir);
 				
 				//East Wall
 				MapSite eastDir= null;
@@ -145,15 +146,14 @@ public class SimpleMazeGame
 					eastDir = new Wall();
 				} else if (side.startsWith("d")){ //for door side
 					System.out.println("eastern door: " + roomIndex);
-					
 					int doorIndex = getDoorIndex(side);
-					System.out.println(doorIndex);
 					eastDir = doors.get(doorIndex);
 				} else { //for room side
 					eastDir = rooms.get(Integer.parseInt(side));
 				}
 				
-				currRoom.setSide(Direction.East, eastDir);
+				sideSetUp.addRoomDir(eastDir, currRoom, Direction.East);
+				//currRoom.setSide(Direction.East, eastDir);
 				
 				//South Wall
 				MapSite southDir= null;
@@ -162,13 +162,13 @@ public class SimpleMazeGame
 					southDir = new Wall();
 				} else if (side.startsWith("d")){ //for door side
 					int doorIndex = getDoorIndex(side);
-					System.out.println(doorIndex);
 					southDir = doors.get(doorIndex);
 				} else { //for room side
 					southDir = rooms.get(Integer.parseInt(side));
 				}
 				
-				currRoom.setSide(Direction.South, southDir);
+				sideSetUp.addRoomDir(southDir, currRoom, Direction.South);
+				//currRoom.setSide(Direction.South, southDir);
 				
 				//West Wall
 				MapSite westDir= null;
@@ -177,21 +177,69 @@ public class SimpleMazeGame
 					westDir = new Wall();
 				} else if (side.startsWith("d")){ //for door side
 					int doorIndex = getDoorIndex(side);
-					System.out.println(doorIndex);
 					westDir = doors.get(doorIndex);
 				} else { //for room side
 					westDir = rooms.get(Integer.parseInt(side));
 				}
 				
-				currRoom.setSide(Direction.West, westDir);
+				sideSetUp.addRoomDir(westDir, currRoom, Direction.West);
+				//currRoom.setSide(Direction.West, westDir);
+				
 				
 			} 
 		}
+		readSides(sideSetUp, rooms, doors);
 		
 	}
 	
 	private static int getDoorIndex(String door) {
 		return Integer.parseInt(door.substring(1));
+	}
+	
+	/**
+	 * adding side function calls first by room, then by wall, then by door
+	 * @param sideSetup
+	 */
+	private static void readSides(SideSetup sideSetup, ArrayList<Room> rooms, ArrayList<Door> doors) {
+		//first walls
+		HashMap<Room, ArrayList<Direction>> walls = sideSetup.getWalls();
+		iterateMap(walls, new Wall());
+		
+		//then add rooms and doors
+		HashMap<String, HashMap<Room, ArrayList<Direction>>> doorRoomMap = sideSetup.getMapSiteRoom();
+		Iterator it = doorRoomMap.entrySet().iterator();
+		while (it.hasNext()) { //key is room or door in string, val is hashmap of room and direction
+	        Map.Entry pair = (Map.Entry)it.next();
+	        if(((String) pair.getKey()).startsWith("r")) {
+	        	String roomNum = ((String) pair.getKey()).substring(1);
+		        Room currSiteRoom = rooms.get(Integer.parseInt(roomNum));
+		        HashMap<Room, ArrayList<Direction>> roomDirMap = (HashMap<Room, ArrayList<Direction>>) pair.getValue();
+		        
+		        iterateMap(roomDirMap, currSiteRoom);
+	        } else if(((String) pair.getKey()).startsWith("d")) {
+	        	String doorNum = ((String) pair.getKey()).substring(1);
+		        Door currSiteDoor = doors.get(Integer.parseInt(doorNum));
+		        HashMap<Room, ArrayList<Direction>> roomDirMap = (HashMap<Room, ArrayList<Direction>>) pair.getValue();
+		        
+		        iterateMap(roomDirMap, currSiteDoor);
+	        }
+	        
+	    }
+		
+	}
+	
+	private static void iterateMap(HashMap<Room, ArrayList<Direction>> roomDir, MapSite mapSite) {
+		Iterator it = roomDir.entrySet().iterator();
+		while (it.hasNext()) { //key is room, val is list of directions
+	        Map.Entry pair = (Map.Entry)it.next();
+	        ArrayList<Direction> directions = (ArrayList<Direction>) pair.getValue();
+	        Room currRoom = (Room) pair.getKey();
+	        for(int dirIndex = 0; dirIndex < directions.size(); dirIndex++) {
+	        	currRoom.setSide(directions.get(dirIndex), mapSite);
+	        }
+	        
+	        it.remove(); // avoids a ConcurrentModificationException
+	    }
 	}
 	
 	private static void makeRoom() {
@@ -201,7 +249,7 @@ public class SimpleMazeGame
 	public static void main(String[] args)
 	{
 		Maze maze = null;
-		if(args == null) {
+		if(args.length == 0) {
 			maze = createMaze();
 		} else {
 			maze = loadMaze(args[0]);
