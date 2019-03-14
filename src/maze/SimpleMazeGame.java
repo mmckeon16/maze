@@ -41,7 +41,7 @@ import maze.ui.MazeViewer;
 public class SimpleMazeGame
 {
 	/**
-	 * Creates a small maze.
+	 * Creates a small maze if no file with maze args is given
 	 */
 	public static Maze createMaze()
 	{
@@ -64,6 +64,11 @@ public class SimpleMazeGame
 		return maze;
 	}
 
+	/**
+	 * Used to read in and interpret the maze files given
+	 * @param path to file
+	 * @return Maze to be shown as a gui
+	 */
 	public static Maze loadMaze(final String path)
 	{
 		ArrayList<Room> rooms = new ArrayList<Room>();
@@ -84,14 +89,14 @@ public class SimpleMazeGame
 					rooms.add(new Room(rooms.size()));
 					
 				} else if(splitLine[0].equals("door")) {
+					//make new door
 					int roomNum1 = Integer.parseInt(splitLine[2]);
 					int roomNum2 = Integer.parseInt(splitLine[3]);
 					
 					Door newDoor = new Door(rooms.get(roomNum1), rooms.get(roomNum2), doors.size());
-					newDoor.setOpen(splitLine[4].equals("open"));
+					newDoor.setOpen(Boolean.parseBoolean(splitLine[4]));
 					doors.add(newDoor);
 				}
-				System.out.println(line);
 			}
 			buffer.close();
 		} catch(IOException e) {
@@ -110,16 +115,14 @@ public class SimpleMazeGame
 	/**
 	 * Makes the walls for each direction
 	 * TODO - one bug that exists is that the doors are not visible if a wall is placed between the two rooms afterwards.
-	 * This can be fixed by placing all of the doors to be added in the direction in the certain rooms after the walls are placed.
-	 * @param rooms
-	 * @param doors
-	 * @param lines
+	 * I tried placing doors after walls and vice versa and this was not fixed, so I am not sure what the solution is
+	 * @param rooms list of rooms to add sides to
+	 * @param doors list of doors to be added to room sides
+	 * @param lines the list of strings which explain what each room has for sides
 	 */
 	private static void makeWalls(ArrayList<Room> rooms, ArrayList<Door> doors, ArrayList<String> lines) {
-		System.out.println("in make walls");
-		SideSetup sideSetUp = new SideSetup();
-		for(int lineIndex=0; lineIndex < lines.size(); lineIndex++) {
-			String[] splitLine = lines.get(lineIndex).split(" ");
+		for(int linesIndex=0; linesIndex < lines.size(); linesIndex++) {
+			String[] splitLine = lines.get(linesIndex).split(" ");
 			if(splitLine[0].equals("room")) {
 				int roomIndex = Integer.parseInt(splitLine[1]);
 				Room currRoom = rooms.get(roomIndex);
@@ -137,68 +140,21 @@ public class SimpleMazeGame
 					} else { //for room side
 						mapSite = rooms.get(Integer.parseInt(side));
 					}
-					
-					sideSetUp.addRoomDir(mapSite, currRoom, currDir);
+					currRoom.setSide(currDir, mapSite);
 				}
 				
 			} 
 		}
-		readSides(sideSetUp, rooms, doors);
 		
-	}
-	
-	private static int getDoorIndex(String door) {
-		return Integer.parseInt(door.substring(1));
 	}
 	
 	/**
-	 * adding side function calls first by room, then by wall, then by door
-	 * @param sideSetup
+	 * returns index of door in door list
+	 * @param door number in door name to be parsed into ind
+	 * @return index of door
 	 */
-	private static void readSides(SideSetup sideSetup, ArrayList<Room> rooms, ArrayList<Door> doors) {
-		//first walls
-		HashMap<Room, ArrayList<Direction>> walls = sideSetup.getWalls();
-		iterateMap(walls, new Wall());
-		
-		//then add rooms and doors
-		HashMap<String, HashMap<Room, ArrayList<Direction>>> doorRoomMap = sideSetup.getMapSiteRoom();
-		Iterator it = doorRoomMap.entrySet().iterator();
-		while (it.hasNext()) { //key is room or door in string, val is hashmap of room and direction
-	        Map.Entry pair = (Map.Entry)it.next();
-	        if(((String) pair.getKey()).startsWith("r")) {
-	        	String roomNum = ((String) pair.getKey()).substring(1);
-		        Room currSiteRoom = rooms.get(Integer.parseInt(roomNum));
-		        HashMap<Room, ArrayList<Direction>> roomDirMap = (HashMap<Room, ArrayList<Direction>>) pair.getValue();
-		        
-		        iterateMap(roomDirMap, currSiteRoom);
-	        } else if(((String) pair.getKey()).startsWith("d")) {
-	        	String doorNum = ((String) pair.getKey()).substring(1);
-		        Door currSiteDoor = doors.get(Integer.parseInt(doorNum));
-		        HashMap<Room, ArrayList<Direction>> roomDirMap = (HashMap<Room, ArrayList<Direction>>) pair.getValue();
-		        
-		        iterateMap(roomDirMap, currSiteDoor);
-	        }
-	        
-	    }
-		
-	}
-	
-	private static void iterateMap(HashMap<Room, ArrayList<Direction>> roomDir, MapSite mapSite) {
-		Iterator it = roomDir.entrySet().iterator();
-		while (it.hasNext()) { //key is room, val is list of directions
-	        Map.Entry pair = (Map.Entry)it.next();
-	        ArrayList<Direction> directions = (ArrayList<Direction>) pair.getValue();
-	        Room currRoom = (Room) pair.getKey();
-	        for(int dirIndex = 0; dirIndex < directions.size(); dirIndex++) {
-	        	currRoom.setSide(directions.get(dirIndex), mapSite);
-	        }
-	        
-	        it.remove(); // avoids a ConcurrentModificationException
-	    }
-	}
-	
-	private static void makeRoom() {
-		
+	private static int getDoorIndex(String door) {
+		return Integer.parseInt(door.substring(1));
 	}
 
 	public static void main(String[] args)
